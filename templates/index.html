@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>GbDetector | Comment Moderation System</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <style>
+            /* ========== Base Variables ========== */
+            :root {
+                /* Color palette */
+                --primary: #6366f1;
+                --primary-dark: #4f46e5;
+                --primary-light: #a5b4fc;
+                --secondary: #22d3ee;
+                --danger: #ef4444;
+                --danger-dark: #dc2626;
+                --success: #22c55e;
+                --dark: #1e293b;
+                --light: #f8fafc;
+
+                /* Gray scale */
+                --gray-100: #f3f4f6;
+                --gray-200: #e5e7eb;
+                --gray-300: #d1d5db;
+                --gray-500: #6b7280;
+                --gray-700: #374151;
+                --gray-900: #111827;
+
+                /* Elevation (shadows) */
+                --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+                --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+                /* Border radius */
+                --radius-sm: 0.375rem; /* 6px */
+                --radius: 0.625rem; /* 10px */
+                --radius-lg: 1rem; /* 16px */
+
+                /* Animation */
+                --transition-fast: all 0.2s ease;
+                --transition: all 0.3s ease;
+                --transition-slow: all 0.5s ease;
+
+                /* Fonts */
+                --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+                --font-mono: "Consolas", "Monaco", monospace;
+
+                /* Spacing (can be used with calc) */
+                --space-1: 0.25rem; /* 4px */
+                --space-2: 0.5rem; /* 8px */
+                --space-3: 0.75rem; /* 12px */
+                --space-4: 1rem; /* 16px */
+                --space-5: 1.35rem; /* 20px */
+                --space-6: 1.5rem; /* 24px */
+                --space-8: 2rem; /* 32px */
+                --space-10: 2.5rem; /* 40px */
+            }
+
+            /* ========== Reset & Base Styles ========== */
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* Improve text rendering */
+            html {
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                scroll-behavior: smooth;
+            }
+
+            body {
+                font-family: var(--font-sans);
+                background: linear-gradient(135deg, #f6f8fb 0%, #e9edf5 100%);
+                min-height: 100vh;
+                padding: 0;
+                margin: 0;
+                color: var(--gray-700);
+                line-height: 1.6;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* Focus styles for accessibility */
+            :focus-visible {
+                outline: 3px solid var(--primary-light);
+                outline-offset: 2px;
+            }
+
+            /* ========== Layout Components ========== */
+            .container {
+                width: clamp(300px, 95%, 800px); /* Responsive width with min/max constraints */
+                max-width: 100%;
+                margin: clamp(1rem, 5vh, 2.5rem) auto;
+                background: white;
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-lg);
+                overflow: hidden;
+                position: relative;
+            }
+
+            .header {
+                background: linear-gradient(to right, var(--primary), #8b5cf6);
+                padding: var(--space-6) 0;
+                text-align: center;
+                color: white;
+                position: relative;
+            }
+
+            /* Create curved edge at bottom of header */
+            .header::after {
+                content: "";
+                position: absolute;
+                width: 100%;
+                height: 38px;
+                bottom: -20px;
+                left: 0;
+                background: white;
+                border-radius: 50% 50% 0 0;
+            }
+
+            .header .title {
+                position: relative;
+                z-index: 2; /* Ensure text is above curved edge */
+            }
+
+            .header .title h1 {
+                font-size: clamp(1.75rem, 5vw, 2.25rem); /* Responsive font size */
+                font-weight: 700;
+                margin-bottom: calc(clamp(0.25rem, 0.5vw, 0.5rem) - 0.25rem);
+                letter-spacing: -0.2px;
+            }
+
+            .header .title p {
+                font-size: clamp(0.875rem, 3vw, 1rem);
+                font-weight: 400;
+                opacity: 0.9;
+            }
+
+            .content {
+                padding: var(--space-4) var(--space-8) var(--space-5);
+            }
+
+            /* App logo styling */
+            .logo-container {
+                position: absolute;
+                top: -40px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(to right, var(--primary), var(--secondary));
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: var(--shadow);
+                z-index: 10;
+            }
+
+            .logo {
+                font-size: 2rem;
+                color: white;
+            }
+
+            /* ========== Form Elements ========== */
+            .form-group {
+                margin-bottom: 1.625rem;
+            }
+
+            label {
+                display: block;
+                font-weight: 500;
+                margin-bottom: var(--space-2);
+                font-size: 0.875rem;
+                color: var(--gray-700);
+            }
+
+            select,
+            input {
+                width: 100%;
+                padding: 0.875rem 1rem;
+                font-size: 0.9375rem;
+                border: 1px solid var(--gray-300);
+                border-radius: var(--radius);
+                background-color: var(--light);
+                transition: var(--transition-fast);
+                box-shadow: var(--shadow-sm);
+                cursor: pointer;
+                font-family: inherit; /* Ensure consistent font */
+            }
+
+            /* Form control states */
+            select:hover,
+            input:hover {
+                border-color: var(--primary);
+            }
+
+            select:focus,
+            input:focus {
+                border-color: var(--primary);
+                outline: none;
+                background-color: white;
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            }
+
+            /* ========== Buttons ========== */
+            .button-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                margin-top: var(--space-4);
+            }
+
+            button {
+                padding: 0.875rem 1.25rem;
+                font-size: 0.9375rem;
+                font-weight: 600;
+                border: none;
+                border-radius: var(--radius);
+                cursor: pointer;
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: var(--shadow);
+                flex: 1;
+                min-width: 120px;
+                font-family: inherit; /* Ensure consistent font */
+            }
+
+            button i {
+                margin-right: var(--space-2);
+            }
+
+            /* Button variants */
+            .start-button {
+                background-color: var(--primary);
+                color: white;
+            }
+
+            .start-button:hover {
+                background-color: var(--primary-dark);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(99, 102, 241, 0.2);
+            }
+
+            .reject-button {
+                background-color: var(--danger);
+                color: white;
+            }
+
+            .reject-button:hover {
+                background-color: var(--danger-dark);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(239, 68, 68, 0.2);
+            }
+
+            .history-button {
+                background-color: var(--gray-500);
+                color: white;
+            }
+
+            .history-button:hover {
+                background-color: var(--gray-700);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(82, 82, 93, 0.2);
+            }
+
+            .tutorial {
+                background-color: var(--gray-100);
+                color: var(--gray-700);
+            }
+
+            .tutorial:hover {
+                background-color: var(--gray-200);
+                transform: translateY(-2px);
+            }
+
+            /* Button states */
+            button:active {
+                transform: translateY(0);
+            }
+
+            button:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+            .status {
+                margin-top: var(--space-2);
+                font-size: 0.875rem;
+                color: var(--gray-500);
+            }
+
+            .status.success {
+                color: var(--success);
+            }
+
+            .status.error {
+                color: var(--danger);
+            }
+
+            /* ========== Log Container ========== */
+            #log-container {
+              width: 100%;
+              min-height: 190px;
+              max-height: 195px; /* batas tinggi container, bisa kamu sesuaikan */
+              margin-top: var(--space-6);
+              background-color: var(--dark);
+              border-radius: var(--radius);
+              overflow: hidden; /* penting agar tidak ada overflow luar */
+              display: flex;
+              flex-direction: column;
+              box-shadow: var(--shadow);
+            }
+
+            .log-header {
+              padding: 0.75rem 1rem;
+              background-color: var(--gray-900);
+              color: var(--gray-300);
+              font-size: 0.875rem;
+              font-weight: 500;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-top-left-radius: var(--radius);
+              border-top-right-radius: var(--radius);
+            }
+
+            .log-content {
+              flex: 1; /* isi ruang tersisa */
+              overflow-y: auto; /* scroll hanya di sini */
+              padding: 1rem;
+              font-family: var(--font-mono);
+              font-size: clamp(0.9rem, 0.4rem + 0.6vw, 1.4rem);
+              color: #a5f3fc;
+              line-height: 1.6;
+
+              /* Scrollbar styling */
+              scrollbar-width: thin;
+              scrollbar-color: var(--gray-700) var(--dark);
+            }
+
+            .log-content::-webkit-scrollbar {
+              width: 8px;
+            }
+
+            .log-content::-webkit-scrollbar-track {
+              background: var(--dark);
+            }
+
+            .log-content::-webkit-scrollbar-thumb {
+              background-color: var(--gray-700);
+              border-radius: 20px;
+              border: 2px solid var(--dark);
+            }
+
+            .title-log, .menu-log{
+                display: flex;
+                gap: 10px;
+            }
+            .menu-log span#clear-log{
+                cursor: pointer;
+                transition: var(--transition);
+                text-align: center;
+            }
+            .menu-log span#clear-log:hover, .menu-log span#clear-log:checked{
+                color: var(--gray-500);
+            }
+
+            /* ========== Notifications ========== */
+            #notification-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+            }
+
+            .notification {
+                padding: 1rem 1.25rem;
+                border-radius: var(--radius);
+                font-weight: 500;
+                margin-bottom: 20px;
+                opacity: 0;
+                transition: opacity 0.4s ease, transform 0.4s ease;
+                transform: translateX(30px);
+                box-shadow: var(--shadow-lg);
+                max-width: 350px;
+                display: flex;
+                align-items: center;
+            }
+
+            .notification.show {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            .notification i {
+                margin-right: 0.75rem;
+                font-size: 1.125rem;
+                flex-shrink: 0;
+            }
+
+            /* Notification variants */
+            .notification.nothing {
+                background-color: var(--gray-100);
+                color: var(--gray-700);
+                border-left: 4px solid var(--gray-500);
+            }
+
+            .notification.success {
+                background-color: #dcfce7;
+                color: #166534;
+                border-left: 4px solid var(--success);
+            }
+
+            .notification.error {
+                background-color: #fee2e2;
+                color: #991b1b;
+                border-left: 4px solid var(--danger);
+            }
+
+            /* ========== Loading Animation ========== */
+            .loading-screen {
+                display: flex;
+                position: absolute;
+                top: 0;
+                left: 0;
+                color: white;
+                font-size: 1.5em;
+                z-index: 10;
+                width: 100%;
+                min-height: 100%;
+                justify-content: center;
+                align-items: center;
+                background: var(--gray-900);
+            }
+
+            .loading-screen #typewriter-text {
+                font-size: 1.2em;
+                white-space: nowrap;
+                overflow: hidden;
+                border-right: 2px solid var(--gray-900);
+                text-align: center;
+                width: fit-content;
+                line-height: 1.2em;
+                min-height: 1.2em;
+                animation: blink-caret 0.75s step-end infinite;
+            }
+
+            @keyframes blink-caret {
+                from,
+                to {
+                    border-color: transparent;
+                }
+                50% {
+                    border-color: var(--gray-900);
+                }
+            }
+
+            .loading-container {
+                display: none;
+                margin: 1.5rem 0;
+                padding: 1.25rem;
+                background-color: var(--gray-100);
+                border-radius: var(--radius);
+                text-align: center;
+                box-shadow: var(--shadow-sm);
+            }
+
+            .loading-text {
+                font-family: var(--font-mono);
+                font-size: 0.875rem;
+                color: var(--gray-700);
+                font-weight: 500;
+                height: 22px;
+                margin-bottom: 0.75rem;
+            }
+
+            /* Text reveal animation elements */
+            .text-reveal {
+                display: inline-block;
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            .text-reveal.visible {
+                opacity: 1;
+                transform: translateY(0);
+                transition: opacity 0.05s ease-in-out, transform 0.1s ease-in-out;
+            }
+
+            .pulse {
+                animation: pulse 1.5s infinite;
+            }
+
+            @keyframes pulse {
+                0% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.3;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+
+            .loading-progress {
+                width: 100%;
+                height: 6px;
+                background-color: var(--gray-200);
+                border-radius: 3px;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .loading-bar {
+                height: 100%;
+                width: 0%;
+                background: linear-gradient(to right, var(--primary), var(--secondary));
+                transition: width 0.3s ease;
+                position: relative;
+                border-radius: 3px;
+            }
+
+            /* Loading bar shine animation */
+            .loading-bar::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
+                animation: shine 1.5s infinite;
+            }
+
+            @keyframes shine {
+                0% {
+                    transform: translateX(-100%);
+                }
+                100% {
+                    transform: translateX(100%);
+                }
+            }
+
+            /* ========== Modal/Popup Components ========== */
+            .tutorial-popup,
+            .history-popup {
+                display: none;
+                position: fixed;
+                z-index: 999;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+            }
+
+            .tutorial-popup.show,
+            .history-popup.show {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            /* Popup content box */
+            .tutorial-popup-content,
+            .history-popup-content {
+                background-color: #fff;
+                padding: 1.875rem;
+                border-radius: var(--radius);
+                width: 90%;
+                max-width: 500px;
+                box-shadow: var(--shadow-lg);
+                animation: fadeInPopup 0.3s ease;
+                position: relative;
+                transform: scale(0.95);
+                transition: transform 0.3s ease;
+            }
+
+            .tutorial-popup.show .tutorial-popup-content,
+            .history-popup.show .history-popup-content {
+                transform: scale(1);
+            }
+
+            /* Close button */
+            .close-btn {
+                position: absolute;
+                top: 15px;
+                right: 20px;
+                font-size: 22px;
+                cursor: pointer;
+                color: var(--gray-500);
+                transition: var(--transition);
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+            }
+
+            .close-btn:hover {
+                color: var(--gray-900);
+                background-color: var(--gray-100);
+            }
+
+            /* Popup content styling */
+            .tutorial-popup-content h3,
+            .history-popup-content h3 {
+                color: var(--primary);
+                font-size: 1.25rem;
+                margin-bottom: 1.25rem;
+                display: flex;
+                align-items: center;
+            }
+
+            .tutorial-popup-content h3 i,
+            .history-popup-content h3 i {
+                margin-right: 0.625rem;
+                font-size: 1.375rem;
+            }
+
+            .tutorial-list {
+                padding-left: 1.25rem;
+                margin: 0;
+                color: var(--gray-700);
+                font-size: 0.9375rem;
+                line-height: 1.7;
+            }
+
+            .tutorial-list li {
+                margin-bottom: 0.625rem;
+            }
+
+            .tutorial-list code {
+                background-color: var(--gray-100);
+                padding: 0.188rem 0.375rem;
+                border-radius: 4px;
+                font-size: 0.8125rem;
+                font-family: var(--font-mono);
+                color: var(--primary);
+            }
+
+            /* Search input for history */
+            #history-search {
+                margin-bottom: 1rem;
+                padding: 0.625rem;
+                width: 100%;
+                border: 1px solid var(--gray-300);
+                border-radius: var(--radius-sm);
+            }
+
+            #history-content {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+
+            /* Animation keyframes */
+            @keyframes fadeInPopup {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+
+            /* ========== Responsive Design ========== */
+
+            /* Responsive styles */
+            @media (max-width: 768px) {
+                .container {
+                    width: 92%;
+                    margin: 20px auto;
+                }
+
+                .header {
+                    padding: 25px 0;
+                }
+
+                .title h1 {
+                    font-size: 28px;
+                }
+
+                .content {
+                    padding: 30px 20px 25px;
+                }
+
+                .button-group {
+                    flex-direction: column;
+                }
+
+                button {
+                    width: 100%;
+                }
+
+                #log-container {
+                    height: 100%;
+                }
+
+                .log-content {
+                    height: calc(200px - 40px);
+                }
+
+                .tutorial-popup-content {
+                    width: 95%;
+                    padding: 25px 20px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .container {
+                    width: 95%;
+                    margin: 15px auto;
+                }
+
+                .header {
+                    padding: 20px 0;
+                }
+
+                .title h1 {
+                    font-size: 24px;
+                }
+
+                .title p {
+                    font-size: 14px;
+                }
+
+                .content {
+                    padding: 25px 15px 20px;
+                }
+
+                label {
+                    font-size: 13px;
+                }
+
+                select,
+                input {
+                    padding: 12px 14px;
+                    font-size: 14px;
+                }
+
+                button {
+                    padding: 12px 16px;
+                    font-size: 14px;
+                }
+
+                #log-container {
+                    height: 95%;
+                }
+
+                .log-content {
+                    height: calc(180px - 40px);
+                }
+            }
+
+            /* ========== Print Styles ========== */
+            @media print {
+                body {
+                    background: white;
+                }
+
+                .container {
+                    box-shadow: none;
+                    width: 100%;
+                }
+
+                .button-group,
+                .notification,
+                .loading-container {
+                    display: none !important;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="notification-container">
+            <div id="notification" class="notification">
+                <i class="fas fa-check-circle"></i>
+                <span id="notification-text"></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Loading screen Container -->
+            <div class="loading-screen" id="loading-screen">
+                <div id="typewriter-text"></div>
+            </div>
+             <!-- End Loading screen Container -->
+              
+            <div class="header">
+                <!-- Title -->
+                <div class="title">
+                    <h1>GbDetector</h1>
+                    <p>Comment Moderation System</p>
+                </div>
+                <!-- End Title -->
+            </div>
+
+            <div class="content">
+                <!-- Form group -->
+                <div class="form-group">
+                    <label for="platform"><i class="fas fa-share-alt"></i> Select Platform</label>
+                    <select id="platform">
+                        <option value="instagram">Instagram</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="twitter">Twitter</option>
+                    </select>
+                    <div id="credential-status" class="status"></div>
+                </div>
+                <div class="form-group">
+                    <label for="mediaId"><i class="fas fa-id-card"></i> Media / Post / Video ID</label>
+                    <input type="text" id="mediaId" placeholder="Enter the ID here..." />
+                </div>
+                <!-- End form group -->
+
+                <!-- Button menu -->
+                <div class="button-group">
+                    <button id="startButton" class="start-button"><i class="fas fa-play"></i> Start Moderation</button>
+                    <button id="rejectButton" class="reject-button"><i class="fas fa-ban"></i> Cancel</button>
+                    <button id="historyButton" class="history-button"><i class="fas fa-history"></i> History</button>
+                    <button id="tutorial-btn" class="tutorial"><i class="fas fa-question-circle"></i> Tutorial</button>
+                </div>
+                <!-- End Button menu -->
+
+                <!-- Loading Text Reveal Container -->
+                <div id="loading-container" class="loading-container">
+                    <div id="loading-text" class="loading-text"></div>
+                    <div class="loading-progress">
+                        <div id="loading-bar" class="loading-bar"></div>
+                    </div>
+                </div>
+                <!-- End Loading Text Reveal Container -->
+
+                <!-- Logging Container -->
+                <div id="log-container">
+                    <div class="log-header">
+                        <div class="title-log">
+                          <span><i class="fas fa-terminal"></i> System Log</span>
+                        </div>
+                        <div class="menu-log">
+                          <span id="clear-log">Clear</span>
+                          <span id="log-status">Ready</span>
+                        </div>
+                    </div>
+                    <div id="log" class="log-content"></div>
+                </div>
+                <div class="hidden-log" id="hidden-log" style="display: none;"></div>
+                <div class="historylog" id="historylog" style="display: none;"></div>
+                <!-- End Logging Container -->
+            </div>
+
+            <div id="tutorial-container" class="tutorial-popup">
+                <!-- Popup menu Container -->
+                <div class="tutorial-popup-content">
+                    <span id="close-tutorial" class="close-btn"><i class="fas fa-times"></i></span>
+                    <h3><i class="fas fa-info-circle"></i> Usage Tutorial</h3>
+                    <ol class="tutorial-list">
+                        <li>Make sure the <code>credential.json</code> file containing your API credentials is located in the current directory.</li>
+                        <li>Select a platform from the dropdown list (e.g., Instagram, Facebook, YouTube).</li>
+                        <li>Enter the ID of the media, post, or video you want to moderate.</li>
+                        <li>Click the <strong>Start Moderation</strong> button to begin the comment moderation process.</li>
+                        <li>The system log will display real-time progress and any detected issues.</li>
+                        <li>Click the <strong>Cancel</strong> button to stop the process at any time.</li>
+                    </ol>
+                </div>
+                <!-- End Popup menu Container -->
+            </div>
+            <div id="history-container" class="tutorial-popup">
+                <!-- Popup menu Container -->
+                <div class="tutorial-popup-content"> <!-- Popup History Content -->
+                    <span id="close-history" class="close-btn"><i class="fas fa-times"></i></span>
+                    <h3><i class="fas fa-history"></i> Moderation History</h3>
+                    <input type="text" id="history-search" placeholder="Search ID or platform..." style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius);" />
+                    <div id="history-content" style="max-height: 300px; overflow-y: auto; padding-top: 10px;"></div>
+                </div>
+                <!-- End Popup menu Container -->
+            </div>
+        </div>
+
+        <script>
+            // Cache DOM elements for better performance
+            const elements = {
+                notification: document.getElementById("notification"),
+                startButton: document.getElementById("startButton"),
+                rejectButton: document.getElementById("rejectButton"),
+                logContainer: document.getElementById("log"),
+                loadingContainer: document.getElementById("loading-container"),
+                loadingText: document.getElementById("loading-text"),
+                loadingBar: document.getElementById("loading-bar"),
+                tutorialBtn: document.getElementById("tutorial-btn"),
+                tutorialPopup: document.getElementById("tutorial-container"),
+                tutorialCloseBtn: document.getElementById("close-tutorial"),
+                logStatus: document.getElementById("log-status"),
+                historyBtn: document.getElementById("historyButton"),
+                historyPopup: document.getElementById("history-container"),
+                closeHistory: document.getElementById("close-history"),
+                historyContent: document.getElementById("history-content"),
+                historyLog: document.getElementById("historylog"),
+                historySearch: document.getElementById("history-search"),
+                clearTerminalLog: document.getElementById("clear-log"),
+                mediaIdInput: document.getElementById("mediaId"),
+                platformSelect: document.getElementById("platform"),
+            };
+
+            // State variables
+            let isRunning = false;
+            let textRevealInterval = null;
+
+            // Collection of loading messages to display during processing
+            const loadingTexts = [
+                "Initializing moderation system...",
+                "Connecting to API services...",
+                "Fetching comments data...",
+                "Analyzing content patterns...",
+                "Applying detection algorithms...",
+                "Processing gambling indicators...",
+                "Preparing moderation actions...",
+            ];
+
+            /**
+             * Animates text reveal character by character with progress bar update
+             * @param {string} text - Text to reveal
+             * @param {Function} callback - Function to call after text is revealed
+             */
+            function startTextReveal(text, callback) {
+                elements.loadingText.innerHTML = "";
+                const characters = text.split("");
+                let currentIndex = 0;
+
+                // Clear any existing intervals to prevent overlaps
+                if (textRevealInterval) clearInterval(textRevealInterval);
+
+                textRevealInterval = setInterval(() => {
+                    if (currentIndex < characters.length) {
+                        // Create and add character with animation class
+                        const span = document.createElement("span");
+                        span.className = "text-reveal";
+                        span.textContent = characters[currentIndex];
+                        elements.loadingText.appendChild(span);
+
+                        // Trigger reveal animation with slight delay
+                        setTimeout(() => span.classList.add("visible"), 10);
+
+                        currentIndex++;
+
+                        // Update progress bar proportionally
+                        const progress = (currentIndex / characters.length) * 100;
+                        elements.loadingBar.style.width = `${progress}%`;
+                    } else {
+                        // Animation complete
+                        clearInterval(textRevealInterval);
+
+                        // Add pulsing effect to indicate waiting state
+                        elements.loadingText.classList.add("pulse");
+
+                        // Call next step after delay
+                        if (callback) {
+                            setTimeout(callback, 2000);
+                        }
+                    }
+                }, 50); // Speed of character reveal
+            }
+
+            /**
+             * Cycles through loading text messages while process is running
+             */
+            function cycleLoadingTexts() {
+                let textIndex = 0;
+
+                const showNextText = () => {
+                    elements.loadingText.classList.remove("pulse");
+                    startTextReveal(loadingTexts[textIndex], () => {
+                        textIndex = (textIndex + 1) % loadingTexts.length;
+                        if (isRunning) {
+                            showNextText(); // Continue cycle if still running
+                        } else {
+                            hideLoading(); // Stop and hide loading UI
+                        }
+                    });
+                };
+
+                showNextText(); // Start the cycle
+            }
+
+            /**
+             * Creates typewriter text animation effect
+             * @param {string} text - Text to animate
+             * @param {string} elementId - ID of target element
+             * @param {Object} options - Configuration options
+             */
+            function typeWriterEffect(text, elementId, options = {}) {
+                // Default options with destructuring
+                const {
+                    typeSpeed = 100,
+                    eraseSpeed = 50,
+                    delay = 1000,
+                    mode = 1, // 0: type once, 1: type and erase loop
+                    callback = () => {},
+                } = options;
+
+                const el = document.getElementById(elementId);
+                if (!el) return;
+
+                let i = 0;
+                let isDeleting = false;
+
+                function type() {
+                    const currentText = text.substring(0, i);
+
+                    if (mode === 1) {
+                        // Mode 1: Type and erase loop
+                        el.textContent = currentText;
+
+                        if (!isDeleting && i < text.length) {
+                            // Still typing
+                            i++;
+                            setTimeout(type, typeSpeed);
+                        } else if (isDeleting && i > 0) {
+                            // Erasing
+                            i--;
+                            setTimeout(type, eraseSpeed);
+                        } else {
+                            // Switch between typing and erasing
+                            isDeleting = !isDeleting;
+                            setTimeout(type, delay);
+                        }
+                    } else if (mode === 0) {
+                        // Mode 0: Type once then stop
+                        if (i < text.length) {
+                            el.textContent += text.charAt(i);
+                            i++;
+                            setTimeout(type, typeSpeed);
+                        } else {
+                            callback(el); // Execute callback when done
+                        }
+                    }
+                }
+
+                type(); // Start animation
+
+                if (mode === 1) {
+                    // Call callback once after cycle if not wanting infinite loop
+                    setTimeout(() => callback(el), text.length * typeSpeed * 2 + delay);
+                }
+            }
+
+            /**
+             * Shows loading animation and updates UI state
+             */
+            function showLoading() {
+                elements.loadingContainer.style.display = "block";
+                elements.loadingBar.style.width = "0%";
+                isRunning = true;
+                cycleLoadingTexts();
+                elements.startButton.disabled = true;
+                elements.logStatus.textContent = "Processing";
+                elements.logStatus.style.color = "#22d3ee";
+            }
+
+            /**
+             * Hides loading animation and resets UI state
+             */
+            function hideLoading() {
+                if (textRevealInterval) clearInterval(textRevealInterval);
+                isRunning = false;
+                elements.loadingContainer.style.display = "none";
+                elements.loadingText.classList.remove("pulse");
+                elements.startButton.disabled = false;
+                elements.logStatus.textContent = "Ready";
+                elements.logStatus.style.color = "#a5f3fc";
+            }
+
+            /**
+             * Adds a timestamped log entry to the log container
+             * @param {string} message - Message to add to log
+             */
+            function addLog(message) {
+                const time = new Date().toLocaleTimeString();
+                const logEntry = document.createElement("div");
+                logEntry.innerHTML = `<span style="color: #64748b;">[${time}]</span> ${message}`;
+                elements.logContainer.appendChild(logEntry);
+                elements.logContainer.scrollTop = elements.logContainer.scrollHeight; // Auto-scroll
+            }
+
+            /**
+             * Shows a timed notification with type-specific styling
+             * @param {string} message - Notification message
+             * @param {string} type - Notification type ('success', 'error', or 'info')
+             */
+            function showNotification(message, type = "success") {
+                const notificationText = document.getElementById("notification-text");
+
+                // Set icon based on notification type
+                const iconElement = elements.notification.querySelector("i");
+                if (iconElement) {
+                    const iconClass =
+                        {
+                            success: "fas fa-check-circle",
+                            error: "fas fa-exclamation-circle",
+                            info: "fas fa-info-circle",
+                        }[type] || "fas fa-info-circle";
+
+                    iconElement.className = iconClass;
+                }
+
+                notificationText.textContent = message;
+                elements.notification.className = `notification ${type}`;
+
+                // Show with animation
+                elements.notification.style.display = "flex";
+
+                // Use requestAnimationFrame for smoother animation
+                requestAnimationFrame(() => {
+                    elements.notification.classList.add("show");
+                });
+
+                // Hide after delay with animation
+                setTimeout(() => {
+                    elements.notification.classList.remove("show");
+                    setTimeout(() => {
+                        elements.notification.style.display = "none";
+                    }, 300); // Match transition duration
+                }, 3500);
+            }
+
+            /**
+             * Starts the moderation process
+             */
+            async function startModeration() {
+                const platform = elements.platformSelect.value;
+                const mediaId = elements.mediaIdInput.value.trim();
+
+                // Validate input
+                if (!mediaId) {
+                    addLog('<span style="color: #ef4444;">Error: Media ID is required to start moderation.</span>');
+                    showNotification("Media ID is required!", "error");
+                    return;
+                }
+
+                // Log start of process
+                addLog(`Starting moderation on <span style="color: #22d3ee; font-weight: 500;">${platform}</span> for Media ID: <span style="color: #a5f3fc; font-weight: 500;">${mediaId}</span>...`);
+                showNotification(`Moderation started for ${platform}`, "success");
+
+                // Show loading animation
+                showLoading();
+
+                // Handle hidden log for timing simulation
+                if (elements.notification.style.display !== "none" && isRunning) {
+                    const hiddenLog = document.getElementById("hidden-log");
+                    if (hiddenLog) {
+                        // Set up observer to watch for changes in hidden log
+                        const observer = new MutationObserver(() => {
+                            setTimeout(() => {
+                                // Calculate delay based on hidden log content or use default
+                                const match = hiddenLog.innerText.match(/\d+/);
+                                const randomInt = Math.floor(Math.random() * 7) + 9; // 9-15 range
+                                const delay = match
+                                    ? parseInt(match[0], 10) + randomInt + 4 // Custom delay with offset
+                                    : 7207 - randomInt * loadingTexts.length; // Default fallback delay
+
+                                // Hide loading after calculated delay
+                                setTimeout(
+                                    () => {
+                                        hideLoading();
+                                        hiddenLog.innerText = ""; // Clear the hidden log
+                                    },
+                                    delay > 100 ? delay + 500 : delay
+                                );
+
+                                observer.disconnect(); // Stop observing after first trigger
+                            }, 60);
+                        });
+
+                        // Start observing changes
+                        observer.observe(hiddenLog, {
+                            childList: true,
+                            subtree: true,
+                            characterData: true,
+                        });
+                    }
+                }
+
+                // Store history entry
+                saveToHistory(platform, mediaId);
+            }
+
+            /**
+             * Saves moderation entry to history
+             * @param {string} platform - Platform name
+             * @param {string} idVideo - Media ID
+             */
+            function saveToHistory(platform, idVideo) {
+                if (!elements.historyLog) return;
+
+                const entry = JSON.stringify({ platform, idVideo, timestamp: Date.now() });
+                const currentContent = elements.historyLog.innerText.trim();
+
+                elements.historyLog.innerText = currentContent ? `${currentContent}\n${entry}` : entry;
+            }
+
+            /**
+             * Updates history display with filtered content
+             * @param {string} [keyword] - Optional search keyword
+             */
+            function updateHistoryDisplay(keyword = "") {
+                if (!elements.historyLog || !elements.historyContent) return;
+
+                const searchTerm = keyword.toLowerCase();
+
+                try {
+                    // Parse and format history entries
+                    const historyData = elements.historyLog.innerText
+                        .trim()
+                        .split("\n")
+                        .map((line) => {
+                            try {
+                                const item = JSON.parse(line);
+                                const element = `
+            <div class="history-item" style="background: var(--gray-100); padding: 10px 12px; border-radius: var(--radius); margin-bottom: 10px;">
+              <div><strong>${item.platform}</strong></div>
+              <div style="font-size: 13px; color: var(--gray-500); word-break: break-all;">${item.idVideo}</div>
+            </div>`;
+                                // Return with display property based on search match
+                                if (elements.historySearch.disabled) elements.historySearch.disabled = false;
+                                return {
+                                    element,
+                                    visible: !searchTerm || item.platform.toLowerCase().includes(searchTerm) || item.idVideo.toLowerCase().includes(searchTerm),
+                                };
+                            } catch (e) {
+                                if (!elements.historySearch.disabled) elements.historySearch.disabled = true;
+                                return {
+                                    element: `<div style="color:#ef4444;">Invalid JSON: ${line}</div>`,
+                                    visible: true,
+                                };
+                            }
+                        });
+
+                    // Generate HTML with visibility filtering applied
+                    elements.historyContent.innerHTML = historyData.length > 0 ? historyData.map((item) => (item.visible ? item.element : `<div style="display:none">${item.element}</div>`)).join("") : "<em>No history available.</em>";
+                } catch (error) {
+                    console.error("Error updating history:", error);
+                    if (!elements.historySearch.disabled) elements.historySearch.disabled = true;
+                    elements.historyContent.innerHTML = "<em>Error loading history.</em>";
+                }
+            }
+
+            // ---------- Event Listeners ----------
+
+            // Start button click handler
+            elements.startButton.addEventListener("click", startModeration);
+
+            // Cancel button click handler
+            elements.rejectButton.addEventListener("click", () => {
+                if (isRunning) {
+                    addLog('<span style="color: #ef4444;">⚠ Moderation process cancelled by user</span>');
+                    hideLoading();
+                    showNotification("Process cancelled", "error");
+                }
+            });
+
+            // Enter key press on media ID input
+            elements.mediaIdInput?.addEventListener("keypress", (e) => {
+                if (e.key === "Enter" && !isRunning) {
+                    elements.startButton.click();
+                }
+            });
+
+            // Tutorial button handlers
+            elements.tutorialBtn?.addEventListener("click", () => {
+                elements.tutorialPopup.style.display = "flex";
+                requestAnimationFrame(() => {
+                    elements.tutorialPopup.classList.add("show");
+                });
+            });
+
+            elements.tutorialCloseBtn?.addEventListener("click", () => {
+                elements.tutorialPopup.classList.remove("show");
+                setTimeout(() => {
+                    elements.tutorialPopup.style.display = "none";
+                }, 300);
+            });
+
+            // History button click handler
+            elements.historyBtn?.addEventListener("click", () => {
+                updateHistoryDisplay();
+                elements.historyPopup.style.display = "flex";
+                requestAnimationFrame(() => elements.historyPopup.classList.add("show"));
+            });
+
+            // Close history button handler
+            elements.closeHistory?.addEventListener("click", () => {
+                elements.historyPopup.classList.remove("show");
+                setTimeout(() => (elements.historyPopup.style.display = "none"), 300);
+            });
+
+            // History search input handler
+            elements.historySearch?.addEventListener("input", (event) =>{
+                updateHistoryDisplay(event.target.value);
+            });
+            elements.historySearch?.addEventListener("keyup", (event) =>{
+              if (event.keyCode === 13) {
+                updateHistoryDisplay(event.target.value);
+              };
+            });
+            // Clear terminal
+            elements.clearTerminalLog.addEventListener("click", () =>{
+              if (elements.logContainer.firstElementChild) elements.logContainer.innerHTML = "";
+            });
+
+            // Close popups when clicking outside content
+            window.addEventListener("click", (event) => {
+                if (event.target === elements.tutorialPopup) {
+                    elements.tutorialPopup.classList.remove("show");
+                    setTimeout(() => {
+                        elements.tutorialPopup.style.display = "none";
+                    }, 300);
+                } else if (event.target === elements.historyPopup) {
+                    elements.historyPopup.classList.remove("show");
+                    setTimeout(() => {
+                        elements.historyPopup.style.display = "none";
+                    }, 300);
+                }
+            });
+            
+            // Disable right click
+            window.addEventListener('contextmenu', (e) => {
+              e.preventDefault();
+            });
+            window.addEventListener('keydown', function(e) {
+              if (
+                (e.ctrlKey || e.metaKey) &&
+                (e.key === 'i' || e.key === 'I' || e.key === 'j' || e.key === 'J' || e.key === 'u' || e.key === 'U' || e.key === 'p' || e.key === 'P')
+              ) {
+                e.preventDefault();
+              }
+            });
+
+            // Initial loading animation
+            typeWriterEffect("Please wait...", "typewriter-text", {
+                // Fixed typo "waiting" to "wait"
+                typeSpeed: 80,
+                callback: (el) => {
+                    setTimeout(() => {
+                        el.style.transition = "opacity 0.5s ease";
+                        el.style.opacity = "0";
+                        setTimeout(() => {
+                            const loadingScreen = document.getElementById("loading-screen");
+                            if (el) el.remove();
+                            if (loadingScreen) loadingScreen.remove();
+                        }, 500); // Remove element after fade out
+                    }, 6400);
+                },
+            });
+        </script>
+    </body>
+</html>
